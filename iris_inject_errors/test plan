@@ -1,0 +1,10 @@
+Tests to run 
+	injecting different number of errors in various places during training
+	see effect on accuracy after various training cycles (epochs)
+
+	1 error in mantissa bits per training round
+	1 error in sign bits per training round
+
+	after 10 epochs, 20, 30, etc up to 500
+
+	
