@@ -2,6 +2,7 @@ import copy
 import sys
 import types as python_types
 import warnings
+import random
 
 import numpy as np
 import tensorflow as tf
@@ -42,6 +43,7 @@ ERROR_TYPES = ['random_bit_flip_percentage', 'random_bit_flip_number', 'stuck_at
 # inject errors per each of these elements
 # ex. if node is chosen, random_bit_flip with a rate of 0.3, it will inject an error in 30% of nodes
 # if layer is chosen, it will inject an error in 30% of layers (or this layer with a 30% chance)
+# if weight is chosen, it will inject in 30% of the weights
 ERROR_ELEMENTS = ['layer', 'node', 'weight']
 
 ERROR_INJECT_PHASE = ['training', 'inference', 'both']
@@ -63,9 +65,10 @@ class DenseErrorLayer(layers.Layer):
                error_rate=0.0,
                error_number=0,
                error_element=None,
-               error_weight_bit_tuples=None,
+               error_node_weight_bit_tuples=None,
                error_type=None,
                error_inject_phase='training',
+               error_pattern=None,
                **kwargs):
     if 'input_shape' not in kwargs and 'input_dim' in kwargs:
       kwargs['input_shape'] = (kwargs.pop('input_dim'),)
@@ -88,8 +91,14 @@ class DenseErrorLayer(layers.Layer):
     self.error_type = error_type
     self.error_number = error_number
     self.error_element = error_element
-    self.error_weight_bit_tuples = error_weight_bit_tuples
+    self.error_node_weight_bit_tuples = error_node_weight_bit_tuples
     self.error_inject_phase = error_inject_phase
+    self.error_pattern = error_pattern
+    self.error_pattern_counter = 0
+    if self.error_pattern:
+      self.error_pattern_length = len(self.error_pattern)
+    else:
+      self.error_pattern_length = 0
 
   def build(self, input_shape):
     dtype = dtypes.as_dtype(self.dtype or K.floatx())
@@ -125,34 +134,12 @@ class DenseErrorLayer(layers.Layer):
     self.built = True
 
   def call(self, inputs, training=False):
-
-    # if(tf.executing_eagerly() == True):
-    #   print("EXECUTE EAGER")
-    #   print(tf.__version__)
-    # print("INPUTS")
-    # print(inputs.shape)
     if training and self.error_inject_phase in ['training', 'both']:
       print("TRAINING")
-      # print("CALLLLL")
-      # print(inputs)
-
-      # print("KERNEL")
-      # print(self.kernel)
-      
-      # print(type(self.kernel))
-      # print("KERNAL [0]")
-      # print(type(self.kernel[0]))
-      # print(self.kernel[0])
-      # np.array(self.kernel[0])
-
       self.inject_errors()
-
-      # print("KERNEL AFTER INJECT")
-      # print(self.kernel)
     elif not training and self.error_inject_phase in ['inference', 'both']:
       print("INFERENCE")
       self.inject_errors()
-      # print(self.kernel)
 
     rank = len(inputs.shape)
     if rank > 2:
@@ -201,11 +188,14 @@ class DenseErrorLayer(layers.Layer):
     base_config = super(Dense, self).get_config()
     return dict(list(base_config.items()) + list(config.items()))
 
-
-
   # TODO: should error rate be a percentage of weights, or percentage of bits
   # NOTE: this probably won't work without eager execution
   def inject_errors(self):
+    """[summary]
+    
+    [description]
+    """
+
     # convert
     # t = tf.Variable(lambda: self.kernel[0])
 
@@ -215,17 +205,13 @@ class DenseErrorLayer(layers.Layer):
     # convert weights to numpy array
     numpy_kernel = K.get_value(self.kernel)
 
-    # print(type(numpy_kernel))
-    # print(numpy_kernel.shape)
-    # print(numpy_kernel)
-    # print(numpy_kernel[0]) 
-    # print(type(numpy_kernel[0]))
-
-    # ta[0,0] = 1.0
     shape = numpy_kernel.shape
+    # print("KERNEL SHAPE")
     # print(shape)
+    # print(numpy_kernel)
     numpy_kernel = numpy_kernel.flatten()
     # print(numpy_kernel.shape)
+    print(numpy_kernel)
     # print(type(numpy_kernel.shape))
     # print(numpy_kernel.shape[0])
     # print(numpy_kernel.shape[0] * self.error_rate)
@@ -240,30 +226,25 @@ class DenseErrorLayer(layers.Layer):
       error_amount = self.error_number
       numpy_kernel = self.inject_random_bit_flips(numpy_kernel, error_amount, self.error_element)
     elif self.error_type == "stuck_at_1":
-      numpy_kernel = self.inject_stuck_at(numpy_kernel, starting_bit=32, number_of_bits=1,stuck_at=1)
+      numpy_kernel = self.inject_stuck_at(numpy_kernel, stuck_at=1)
     elif self.error_type == "stuck_at_0":
-      numpy_kernel = self.inject_stuck_at(numpy_kernel, starting_bit=32, number_of_bits=1, stuck_at=0) 
+      numpy_kernel = self.inject_stuck_at(numpy_kernel, stuck_at=0) 
     elif self.error_type == "bit_flip_at_location":
-      numpy_kernel = self.inject_bit_flip_at_location(numpy_kernel, starting_bit, number_of_bits=1)
+      numpy_kernel = self.inject_bit_flip_at_location(numpy_kernel, shape=shape,
+                                                      error_rate=self.error_rate,
+                                                      error_pattern=self.error_pattern)
 
     # print(numpy_kernel)
     numpy_kernel = numpy_kernel.reshape(shape)
+    print("POST INJECT")
+    print(numpy_kernel)
     self.kernel.assign(numpy_kernel)
 
   def inject_random_bit_flips(self, array, error_amount, error_element):
     error_locations = []
-    # np.set_printoptions(precision=200)
-    # f = array[0,]
-    # print(type(f))
-    # print(f)
     # TODO need to check datatype first, 32 or 64
     # b = bitstring.BitArray(float=f, length=32)
-    # print(b)
-    # b.invert(0)
-    # myFloat = b.float
-    # print(type(myFloat))
-    # print(myFloat)
-    
+
     # inject errors
     error_count = 0
     while error_count < error_amount:
@@ -284,24 +265,58 @@ class DenseErrorLayer(layers.Layer):
     return array
 
   # TODO add verfication for weight/bit locations
-  def inject_stuck_at(self, array, starting_bit, number_of_bits=1, stuck_at=0):
+  def inject_stuck_at(self, array, stuck_at=0):
 
-    for weight_index,bit_index in self.error_weight_bit_tuples:
-      stuck_bit = '0b0'
-      if stuck_at == 1:
+    for node_index, weight_index, bit_index in self.error_node_weight_bit_tuples:
+      if stuck_at == 0:
+        stuck_bit = '0b0'
+      else:
         stuck_bit = '0b1'
 
-      weight = array[weight_index,]
+      weight = array[node_index*shape[-1] + weight_index]
       b = bitstring.BitArray(float=weight, length=32)
       b.overwrite(stuck_bit, bit_index)
       adjusted_weight = b.float
-      array[weight_index, ] = adjusted_weight
+      array[node_index*shape[-1] + weight_index] = adjusted_weight
 
-  def inject_bit_flip_at_location(self, array, starting_bit, number_of_bits=1):
-    pass
+  def inject_bit_flip_at_location(self, array, shape, error_rate=None, error_pattern=None):
+    """Injects bit flips at specified locations in the weight matrix
+
+    Injects bit flips at locations specified in self.error_node_weight_bit_tuples.
+    
+    Arguments:
+      array {numpy vector} -- flattened weight matrix to change
+      shape {tuple} -- The original shape of the weight matrix/kernel
+    
+    Keyword Arguments:
+      error_rate {float} -- [description] (default: {None})
+      error_pattern {list} -- [description] (default: {None})
+    
+    Returns:
+      numpy vector -- flattened weight matrix with injected bit flips
+    """
+
+    if error_rate and error_rate > 0.0 and random.uniform(0,1) >= error_rate:
+      return array
+    elif error_pattern:
+      if self.error_pattern_counter >= self.error_pattern_length:
+        self.error_pattern_counter = 0
+      if error_pattern[self.error_pattern_counter] == 0:
+        self.error_pattern_counter += 1
+        return array
+      else:
+        self.error_pattern_counter += 1
+
+    for node_index, weight_index, bit_index in self.error_node_weight_bit_tuples:
+      weight = array[node_index*shape[-1] + weight_index]
+      b = bitstring.BitArray(float=weight, length=32)
+      b.invert(bit_index)
+      adjusted_weight = b.float
+      array[node_index*shape[-1] + weight_index] = adjusted_weight
+    return array
 
   def inject_positional_bit_flip(self, array):
-    for weight_index,bit_index in self.error_weight_bit_tuples:
+    for weight_index,bit_index in self.error_node_weight_bit_tuples:
       weight = array[weight_index,]
       b = bitstring.BitArray(float=weight, length=32)
       b.invert(bit_index)
