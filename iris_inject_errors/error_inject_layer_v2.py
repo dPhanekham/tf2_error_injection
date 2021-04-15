@@ -50,7 +50,7 @@ ERROR_INJECT_PHASE = ['training', 'inference', 'both']
 
 
 #based off of Dense Layer, but randomly injects errors into the weights
-class DenseErrorLayer(layers.Layer):
+class DenseErrorLayerV2(layers.Layer):
   def __init__(self,
                units,
                activation=None,
@@ -139,7 +139,6 @@ class DenseErrorLayer(layers.Layer):
     self.built = True
 
   def call(self, inputs, training=False):
-    # print(type(inputs))
     if training and self.error_inject_phase in ['training', 'both']:
       if self.verbose:
         print("TRAINING")
@@ -148,8 +147,7 @@ class DenseErrorLayer(layers.Layer):
       if self.verbose:
         print("INFERENCE")
       self.inject_errors()
-
-    # print("HERE1")
+      
     rank = len(inputs.shape)
     if rank > 2:
       # Broadcasting is required for the inputs.
@@ -168,7 +166,6 @@ class DenseErrorLayer(layers.Layer):
     if self.use_bias:
       outputs = tf.nn.bias_add(outputs, self.bias)
 
-    # print("HERE2")
     if training and self.error_inject_phase in ['training', 'both']:
       if self.verbose:
         print("TRAINING")

@@ -86,7 +86,7 @@ print(labels[:5])
 print(train_dataset)
 
 print("CHANGE TO NUMPY")
-train_numpy = tfds.as_numpy(train_dataset, graph=None)
+train_numpy = tfds.as_numpy(train_dataset)
 print(train_numpy)
 feature_array = np.empty((0,4), dtype=np.float32)
 label_array = np.empty((0,), dtype=np.int32)
@@ -130,13 +130,15 @@ error_node_weight_bit_tuples = [(0,0,3)]
 
 # Define the model
 model = tf.keras.Sequential([
-  tf.keras.layers.Dense(10, activation=tf.nn.relu, input_shape=(4,)),
-  error_inject_layer.DenseErrorLayer(5, activation=tf.nn.relu,
-                                        error_rate=1.0, 
-                                        error_type='bit_flip_at_location',
+  tf.keras.layers.Dense(4, activation=tf.nn.relu, input_shape=(4,)),
+  # tf.keras.layers.Dense(10, activation=tf.nn.relu),
+  error_inject_layer.DenseErrorLayer(10, activation=tf.nn.relu,
+                                        error_rate=0.01, 
+                                        error_type='random_bit_flip_percentage',
                                         error_inject_phase='training',
-                                        error_node_weight_bit_tuples=error_node_weight_bit_tuples
-                                        ),  # input shape required
+                                        error_node_weight_bit_tuples=error_node_weight_bit_tuples,
+                                        error_persistence=True,
+                                        verbose=1),  # input shape required
   # error_inject_layer.DenseErrorLayer(6, activation=tf.nn.relu),
   tf.keras.layers.Dense(3)
 ])
@@ -177,7 +179,7 @@ def grad(model, inputs, targets):
   return loss_value, tape.gradient(loss_value, model.trainable_variables)
 
 
-optimizer = error_inject_optimizer.SGDErrorInject(learning_rate=0.01)
+optimizer = tf.keras.optimizers.SGD(learning_rate=0.01)
 
 loss_value, grads = grad(model, features, labels)
 
@@ -198,9 +200,9 @@ print("\n\n\n\n\n")
 train_loss_results = []
 train_accuracy_results = []
 
-num_epochs = 1
+num_epochs = 50
 #
-
+print("TRAINING STARTS HERE")
 for epoch in range(num_epochs):
   epoch_loss_avg = tf.keras.metrics.Mean()
   epoch_accuracy = tf.keras.metrics.SparseCategoricalAccuracy()
@@ -256,3 +258,5 @@ for (x, y) in test_dataset:
   test_accuracy(prediction, y)
 
 print("Test set accuracy: {:.3%}".format(test_accuracy.result()))
+
+print("DONE")
