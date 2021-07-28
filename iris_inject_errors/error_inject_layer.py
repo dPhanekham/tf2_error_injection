@@ -215,7 +215,7 @@ class DenseErrorLayer(layers.Layer):
   # NOTE: this probably won't work without eager execution
   def inject_errors(self):
     """[summary]
-    
+
     [description]
     """
 
@@ -229,7 +229,7 @@ class DenseErrorLayer(layers.Layer):
     numpy_kernel = K.get_value(self.kernel)
 
     shape = numpy_kernel.shape
-    
+
     # print(numpy_kernel)
     numpy_kernel = numpy_kernel.flatten()
     if self.verbose:
@@ -253,7 +253,7 @@ class DenseErrorLayer(layers.Layer):
     elif self.error_type == "stuck_at_1":
       numpy_kernel = self.inject_stuck_at(numpy_kernel, stuck_at=1)
     elif self.error_type == "stuck_at_0":
-      numpy_kernel = self.inject_stuck_at(numpy_kernel, stuck_at=0) 
+      numpy_kernel = self.inject_stuck_at(numpy_kernel, stuck_at=0)
     elif self.error_type == "bit_flip_at_location":
       numpy_kernel = self.inject_bit_flip_at_location(numpy_kernel, shape=shape,
                                                       error_rate=self.error_rate,
@@ -311,15 +311,15 @@ class DenseErrorLayer(layers.Layer):
     """Injects bit flips at specified locations in the weight matrix
 
     Injects bit flips at locations specified in self.error_node_weight_bit_tuples.
-    
+
     Arguments:
       array {numpy vector} -- flattened weight matrix to change
       shape {tuple} -- The original shape of the weight matrix/kernel
-    
+
     Keyword Arguments:
       error_rate {float} -- [description] (default: {None})
       error_pattern {list} -- [description] (default: {None})
-    
+
     Returns:
       numpy vector -- flattened weight matrix with injected bit flips
     """
@@ -362,7 +362,7 @@ class DenseErrorLayer(layers.Layer):
 
   def remove_errors(self):
     """Remove errors that were previously inserted
-    
+
     Remove previously inserted errors
     """
     if self.error_rate <= 0.0 or self.error_type is None:
@@ -372,7 +372,7 @@ class DenseErrorLayer(layers.Layer):
     numpy_kernel = K.get_value(self.kernel)
 
     shape = numpy_kernel.shape
-    
+
     # print(numpy_kernel)
     numpy_kernel = numpy_kernel.flatten()
     if self.verbose:
@@ -401,7 +401,7 @@ class DenseErrorLayer(layers.Layer):
     # elif self.error_type == "stuck_at_1":
     #   numpy_kernel = self.inject_stuck_at(numpy_kernel, stuck_at=1)
     # elif self.error_type == "stuck_at_0":
-    #   numpy_kernel = self.inject_stuck_at(numpy_kernel, stuck_at=0) 
+    #   numpy_kernel = self.inject_stuck_at(numpy_kernel, stuck_at=0)
     # elif self.error_type == "bit_flip_at_location":
     #   numpy_kernel = self.inject_bit_flip_at_location(numpy_kernel, shape=shape,
     #                                                   error_rate=self.error_rate,

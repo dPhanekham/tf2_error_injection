@@ -23,12 +23,9 @@ import bitstring
 from random import randint
 import error_inject_util
 
-
-# TODO: should error rate be a percentage of weights, or percentage of bits
-# NOTE: this probably won't work without eager execution
 def inject_errors(obj):
   """[summary]
-  
+
   [description]
   """
 
@@ -40,25 +37,29 @@ def inject_errors(obj):
 
   # convert weights to numpy array
   numpy_kernel = K.get_value(obj.kernel)
-
   shape = numpy_kernel.shape
-  
-  # print(numpy_kernel)
+  print(f'shape {shape}')
+  print(numpy_kernel)
   numpy_kernel = numpy_kernel.flatten()
   if obj.verbose:
     print("KERNEL SHAPE")
     print(shape)
     print(numpy_kernel)
 
-  #TODO implement error elements
   if obj.error_type == "random_bit_flip_percentage":
     error_amount = int(numpy_kernel.shape[0] * obj.error_rate)
+    # TODO check datatype first
+    if obj.error_element == 'bit':
+      error_amount = error_amount * 32
+    if obj.error_element == 'byte':
+      error_amount = error_amount * 4
     if error_amount == 0:
       if random.random() < obj.error_rate:
         error_amount = 1
     if obj.verbose:
       print(f'inserting {error_amount} errors')
-    numpy_kernel = inject_random_bit_flips(obj, numpy_kernel, error_amount, obj.error_element)
+    numpy_kernel = inject_random_bit_flips(obj, numpy_kernel, obj.error_rate, error_amount, obj.error_element)
+
   elif obj.error_type == "random_bit_flip_number":
     error_amount = obj.error_number
     print(f'inserting {error_amount} errors')
@@ -66,7 +67,7 @@ def inject_errors(obj):
   elif obj.error_type == "stuck_at_1":
     numpy_kernel = inject_stuck_at(obj, numpy_kernel, stuck_at=1)
   elif obj.error_type == "stuck_at_0":
-    numpy_kernel = inject_stuck_at(obj, numpy_kernel, stuck_at=0) 
+    numpy_kernel = inject_stuck_at(obj, numpy_kernel, stuck_at=0)
   elif obj.error_type == "bit_flip_at_location":
     numpy_kernel = inject_bit_flip_at_location(obj, numpy_kernel, shape=shape,
                                                     error_rate=obj.error_rate,
@@ -78,7 +79,18 @@ def inject_errors(obj):
     print(numpy_kernel)
   obj.kernel.assign(numpy_kernel)
 
-def inject_random_bit_flips(obj, array, error_amount, error_element):
+def inject_random_bit_flips(obj, array, error_rate, error_amount, error_element):
+  """Inject random bit flips into the given array
+
+  Args:
+      obj (layers.Layer): tensorflow Layer that we are injecting errors into
+      array (numpy.ndarray): flattened kernel from Layer that we are injecting errors into
+      error_amount (int): The number of errors to inject
+      error_element (str): The level of element [bit,byte,weight,node,kernel]
+
+  Returns:
+      [type]: [description]
+  """
   error_locations = []
   # TODO need to check datatype first, 32 or 64
   # b = bitstring.BitArray(float=f, length=32)
@@ -88,7 +100,6 @@ def inject_random_bit_flips(obj, array, error_amount, error_element):
   while error_count < error_amount:
     weight_index = randint(0, array.shape[0]-1)
     # print(weight_index)
-
     weight = array[weight_index,]
     if obj.verbose:
       print("WEIGHT: ", weight)
@@ -104,6 +115,66 @@ def inject_random_bit_flips(obj, array, error_amount, error_element):
 
   obj.error_inject_locations = error_locations
   return array
+
+
+def inject_random_bit_flips2(obj, numpy_kernel, error_amount, error_element):
+  """Inject random bit flips into the given array
+
+  Args:
+      obj (layers.Layer): tensorflow Layer that we are injecting errors into
+      numpy_kernel (numpy.ndarray): kernel from Layer that we are injecting errors into
+      error_amount (int): The number of errors to inject
+      error_element (str): The level of element [bit,weight,node,kernel]
+
+  Returns:
+      numpy.ndarray: kernel with errors injected
+  """
+    # convert weights to numpy array
+  numpy_kernel
+  shape = numpy_kernel.shape
+  print(f'shape {shape}')
+  print(numpy_kernel)
+
+  if obj.error_type == "random_bit_flip_percentage":
+    error_amount = int(numpy_kernel.shape[0] * obj.error_rate)
+    # TODO check datatype first
+    if obj.error_element == 'bit':
+      error_amount = error_amount * 32
+    if obj.error_element == 'byte':
+      error_amount = error_amount * 4
+    if error_amount == 0:
+      if random.random() < obj.error_rate:
+        error_amount = 1
+  error_locations = []
+  # TODO need to check datatype first, 32 or 64
+  # b = bitstring.BitArray(float=f, length=32)
+  if error_element == 'bit':
+    error_count = 0
+    while error_count < error_amount:
+      weight_index = randint(0, array.shape[0]-1)
+      # print(weight_index)
+      weight = array[weight_index,]
+      if obj.verbose:
+        print("WEIGHT: ", weight)
+      b = bitstring.BitArray(float=weight, length=32)
+      location_in_weight = randint(2, 31)
+      b.invert(location_in_weight)
+      error_locations.append((weight_index,location_in_weight))
+      adjusted_weight = b.float
+      if obj.verbose:
+        print("ADJUSTED: ", adjusted_weight)
+      array[weight_index, ] = adjusted_weight
+      error_count += 1
+
+    obj.error_inject_locations = error_locations
+    return array
+  elif error_element == 'weight':
+    pass
+  elif error_element == 'node':
+    pass
+  elif error_element == 'kernel':
+    pass
+
 
 # TODO add verfication for weight/bit locations
 def inject_stuck_at(obj, array, stuck_at=0):
@@ -124,15 +195,15 @@ def inject_bit_flip_at_location(obj, array, shape, error_rate=None, error_patter
   """Injects bit flips at specified locations in the weight matrix
 
   Injects bit flips at locations specified in obj.error_node_weight_bit_tuples.
-  
+
   Arguments:
     array {numpy vector} -- flattened weight matrix to change
     shape {tuple} -- The original shape of the weight matrix/kernel
-  
+
   Keyword Arguments:
     error_rate {float} -- [description] (default: {None})
     error_pattern {list} -- [description] (default: {None})
-  
+
   Returns:
     numpy vector -- flattened weight matrix with injected bit flips
   """
@@ -175,7 +246,7 @@ def inject_zero_weight(obj):
 
 def remove_errors(obj):
   """Remove errors that were previously inserted
-  
+
   Remove previously inserted errors
   """
   if obj.error_rate <= 0.0 or obj.error_type is None:
@@ -185,7 +256,7 @@ def remove_errors(obj):
   numpy_kernel = K.get_value(obj.kernel)
 
   shape = numpy_kernel.shape
-  
+
   # print(numpy_kernel)
   numpy_kernel = numpy_kernel.flatten()
   if obj.verbose:
@@ -214,7 +285,7 @@ def remove_errors(obj):
   # elif obj.error_type == "stuck_at_1":
   #   numpy_kernel = obj.inject_stuck_at(numpy_kernel, stuck_at=1)
   # elif obj.error_type == "stuck_at_0":
-  #   numpy_kernel = obj.inject_stuck_at(numpy_kernel, stuck_at=0) 
+  #   numpy_kernel = obj.inject_stuck_at(numpy_kernel, stuck_at=0)
   # elif obj.error_type == "bit_flip_at_location":
   #   numpy_kernel = obj.inject_bit_flip_at_location(numpy_kernel, shape=shape,
   #                                                   error_rate=obj.error_rate,

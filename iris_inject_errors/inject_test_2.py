@@ -8,6 +8,7 @@ import tensorflow_datasets as tfds
 import numpy as np
 from sklearn.decomposition import PCA
 from mpl_toolkits.mplot3d import Axes3D
+import dense_error_injection
 
 def pack_features_vector(features, labels):
   """Pack the features into a single array."""
@@ -132,8 +133,8 @@ error_node_weight_bit_tuples = [(0,0,3)]
 model = tf.keras.Sequential([
   tf.keras.layers.Dense(4, activation=tf.nn.relu, input_shape=(4,)),
   # tf.keras.layers.Dense(10, activation=tf.nn.relu),
-  error_inject_layer.DenseErrorLayer(10, activation=tf.nn.relu,
-                                        error_rate=0.01, 
+  dense_error_injection.Dense_Error_Injection(10, activation=tf.nn.relu,
+                                        error_rate=0.1,
                                         error_type='random_bit_flip_percentage',
                                         error_inject_phase='training',
                                         error_node_weight_bit_tuples=error_node_weight_bit_tuples,
@@ -152,7 +153,7 @@ print(predictions[:5])
 tf.nn.softmax(predictions[:5])
 print(tf.nn.softmax(predictions[:5]))
 
-# predict class 
+# predict class
 print("Prediction: {}".format(tf.argmax(predictions, axis=1)))
 print("    Labels: {}".format(labels))
 
