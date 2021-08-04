@@ -38,8 +38,8 @@ def inject_errors(obj):
   # convert weights to numpy array
   numpy_kernel = K.get_value(obj.kernel)
   shape = numpy_kernel.shape
-  print(f'shape {shape}')
-  print(numpy_kernel)
+#   print(f'shape {shape}')
+#   print(numpy_kernel)
   numpy_kernel = numpy_kernel.flatten()
   if obj.verbose:
     print("KERNEL SHAPE")
@@ -48,6 +48,7 @@ def inject_errors(obj):
 
   if obj.error_type == "random_bit_flip_percentage":
     error_amount = int(numpy_kernel.shape[0] * obj.error_rate)
+    print(f'inserting {error_amount} errors')
     # TODO check datatype first
     if obj.error_element == 'bit':
       error_amount = error_amount * 32

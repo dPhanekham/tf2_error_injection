@@ -18,9 +18,6 @@ def pack_features_vector(features, labels):
 # smash warnings at beginning
 deprecation._PRINT_DEPRECATION_WARNINGS = False
 
-# tf.enable_eager_execution()
-# print(tf.executing_eagerly())
-
 # grab iris dataset from cloud
 # train_dataset_url = "https://storage.googleapis.com/download.tensorflow.org/data/iris_training.csv"
 # train_dataset_fp = tf.keras.utils.get_file(fname=os.path.basename(train_dataset_url),
