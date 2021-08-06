@@ -161,14 +161,15 @@ num_epochs = 50
 # Define the model
 model = tf.keras.Sequential([
   tf.keras.layers.Dense(4, activation=tf.nn.relu, input_shape=(4,)),
-  # tf.keras.layers.Dense(10, activation=tf.nn.relu),
-  dense_error_injection.Dense_Error_Injection(10, activation=tf.nn.relu,
-                                        error_rate=0.1,
-                                        error_type='random_bit_flip_percentage',
-                                        error_inject_phase='training',
-                                        error_node_weight_bit_tuples=error_node_weight_bit_tuples,
-                                        error_persistence=True,
-                                        verbose=1),  # input shape required
+  tf.keras.layers.Dense(10, activation=tf.nn.relu),
+  # dense_error_injection.Dense_Error_Injection(10, activation=tf.nn.relu,
+  #                                       error_rate=0.0,
+  #                                       error_type='random_bit_flip_percentage',
+  #                                       error_inject_phase='training',
+  #                                       error_node_weight_bit_tuples=error_node_weight_bit_tuples,
+  #                                       error_persistence=True,
+  #                                       error_element='weight',
+  #                                       verbose=1),  # input shape required
   # error_inject_layer.DenseErrorLayer(6, activation=tf.nn.relu),
   tf.keras.layers.Dense(3)
 ])
@@ -181,21 +182,22 @@ num_epochs = 300
 
 train_history_tmp = model.fit(train_dataset, epochs=num_epochs,
                               validation_data=(test_dataset),
-                              batch_size=32, verbose=0)
+                              batch_size=32, verbose=1)
 
-error_rate_train_history.append((error_rate, train_history_tmp))
+# error_rate_train_history.append((error_rate, train_history_tmp))
 
+print(train_history_tmp)
 
 
 fig, axes = plt.subplots(2, sharex=True, figsize=(12, 8))
 fig.suptitle('Training Metrics')
 
 axes[0].set_ylabel("Loss", fontsize=14)
-axes[0].plot(train_loss_results)
+axes[0].plot(train_history_tmp.history['loss'])
 
 axes[1].set_ylabel("Accuracy", fontsize=14)
 axes[1].set_xlabel("Epoch", fontsize=14)
-axes[1].plot(train_accuracy_results)
+axes[1].plot(train_history_tmp.history['accuracy'])
 plt.show()
 
 

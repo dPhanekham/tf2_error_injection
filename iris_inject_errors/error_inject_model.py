@@ -1,6 +1,8 @@
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras import Model
+from tensorflow.keras import Sequential
+# from tensor
 
 class SequentialErrorInject(Model):
   """Linear stack of layers.

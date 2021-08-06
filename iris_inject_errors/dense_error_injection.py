@@ -103,12 +103,14 @@ class Dense_Error_Injection(layers.Dense):
     else:
       self.error_pattern_length = 0
     self.verbose = verbose
+    self.inject_times_count = 0
 
 
   def call(self, inputs, training=False):
     if training and self.error_inject_phase in ['training', 'both']:
       if self.verbose:
         print("TRAINING")
+      self.inject_times_count += 1
       error_inject_util.inject_errors(self)
     elif not training and self.error_inject_phase in ['inference', 'both']:
       if self.verbose:

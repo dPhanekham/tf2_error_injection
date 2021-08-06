@@ -41,14 +41,13 @@ def inject_errors(obj):
 #   print(f'shape {shape}')
 #   print(numpy_kernel)
   numpy_kernel = numpy_kernel.flatten()
-  if obj.verbose:
+  if obj.verbose >= 2:
     print("KERNEL SHAPE")
     print(shape)
     print(numpy_kernel)
 
   if obj.error_type == "random_bit_flip_percentage":
     error_amount = int(numpy_kernel.shape[0] * obj.error_rate)
-    print(f'inserting {error_amount} errors')
     # TODO check datatype first
     if obj.error_element == 'bit':
       error_amount = error_amount * 32
@@ -57,13 +56,14 @@ def inject_errors(obj):
     if error_amount == 0:
       if random.random() < obj.error_rate:
         error_amount = 1
-    if obj.verbose:
+    if obj.verbose >= 1:
       print(f'inserting {error_amount} errors')
     numpy_kernel = inject_random_bit_flips(obj, numpy_kernel, obj.error_rate, error_amount, obj.error_element)
 
   elif obj.error_type == "random_bit_flip_number":
     error_amount = obj.error_number
-    print(f'inserting {error_amount} errors')
+    # if obj.verbose >= 1:
+    #   print(f'inserting {error_amount} errors')
     numpy_kernel = inject_random_bit_flips(obj, numpy_kernel, error_amount, obj.error_element)
   elif obj.error_type == "stuck_at_1":
     numpy_kernel = inject_stuck_at(obj, numpy_kernel, stuck_at=1)
@@ -75,7 +75,7 @@ def inject_errors(obj):
                                                     error_pattern=obj.error_pattern)
 
   numpy_kernel = numpy_kernel.reshape(shape)
-  if obj.verbose:
+  if obj.verbose >= 2:
     print("POST INJECT")
     print(numpy_kernel)
   obj.kernel.assign(numpy_kernel)
@@ -98,83 +98,69 @@ def inject_random_bit_flips(obj, array, error_rate, error_amount, error_element)
 
   # inject errors
   error_count = 0
+  if error_rate > 0.0 and error_amount == 0:
+    if random.random() < error_rate:
+      error_count = 1
   while error_count < error_amount:
     weight_index = randint(0, array.shape[0]-1)
     # print(weight_index)
     weight = array[weight_index,]
-    if obj.verbose:
+    if obj.verbose >= 2:
       print("WEIGHT: ", weight)
     b = bitstring.BitArray(float=weight, length=32)
     location_in_weight = randint(2, 31)
     b.invert(location_in_weight)
     error_locations.append((weight_index,location_in_weight))
     adjusted_weight = b.float
-    if obj.verbose:
+    if obj.verbose >= 2:
       print("ADJUSTED: ", adjusted_weight)
     array[weight_index, ] = adjusted_weight
     error_count += 1
-
+  if obj.verbose >= 1:
+    print(f'Injected {len(error_locations)} errors')
   obj.error_inject_locations = error_locations
   return array
 
 
-def inject_random_bit_flips2(obj, numpy_kernel, error_amount, error_element):
+def inject_random_bit_flips_into_array(array, error_rate, error_amount, error_element, verbose=1):
   """Inject random bit flips into the given array
 
   Args:
       obj (layers.Layer): tensorflow Layer that we are injecting errors into
-      numpy_kernel (numpy.ndarray): kernel from Layer that we are injecting errors into
+      array (numpy.ndarray): flattened kernel from Layer that we are injecting errors into
       error_amount (int): The number of errors to inject
-      error_element (str): The level of element [bit,weight,node,kernel]
+      error_element (str): The level of element [bit,byte,weight,node,kernel]
 
   Returns:
-      numpy.ndarray: kernel with errors injected
+      [type]: [description]
   """
-    # convert weights to numpy array
-  numpy_kernel
-  shape = numpy_kernel.shape
-  print(f'shape {shape}')
-  print(numpy_kernel)
-
-  if obj.error_type == "random_bit_flip_percentage":
-    error_amount = int(numpy_kernel.shape[0] * obj.error_rate)
-    # TODO check datatype first
-    if obj.error_element == 'bit':
-      error_amount = error_amount * 32
-    if obj.error_element == 'byte':
-      error_amount = error_amount * 4
-    if error_amount == 0:
-      if random.random() < obj.error_rate:
-        error_amount = 1
   error_locations = []
   # TODO need to check datatype first, 32 or 64
   # b = bitstring.BitArray(float=f, length=32)
-  if error_element == 'bit':
-    error_count = 0
-    while error_count < error_amount:
-      weight_index = randint(0, array.shape[0]-1)
-      # print(weight_index)
-      weight = array[weight_index,]
-      if obj.verbose:
-        print("WEIGHT: ", weight)
-      b = bitstring.BitArray(float=weight, length=32)
-      location_in_weight = randint(2, 31)
-      b.invert(location_in_weight)
-      error_locations.append((weight_index,location_in_weight))
-      adjusted_weight = b.float
-      if obj.verbose:
-        print("ADJUSTED: ", adjusted_weight)
-      array[weight_index, ] = adjusted_weight
-      error_count += 1
-
-    obj.error_inject_locations = error_locations
-    return array
-  elif error_element == 'weight':
-    pass
-  elif error_element == 'node':
-    pass
-  elif error_element == 'kernel':
-    pass
+  print("HERE2")
+  # inject errors
+  error_count = 0
+  if error_rate > 0.0 and error_amount == 0:
+    if random.random() < error_rate:
+      error_count = 1
+  while error_count < error_amount:
+    weight_index = randint(0, array.shape[0]-1)
+    # print(weight_index)
+    weight = array[weight_index,]
+    if verbose >= 2:
+      print("WEIGHT: ", weight)
+    b = bitstring.BitArray(float=weight, length=32)
+    location_in_weight = randint(2, 31)
+    b.invert(location_in_weight)
+    error_locations.append((weight_index,location_in_weight))
+    adjusted_weight = b.float
+    if verbose >= 2:
+      print("ADJUSTED: ", adjusted_weight)
+    array[weight_index, ] = adjusted_weight
+    error_count += 1
+  if verbose >= 1:
+    print(f'Injected {len(error_locations)} errors')
+  return array, error_locations
 
 
 # TODO add verfication for weight/bit locations
@@ -260,7 +246,7 @@ def remove_errors(obj):
 
   # print(numpy_kernel)
   numpy_kernel = numpy_kernel.flatten()
-  if obj.verbose:
+  if obj.verbose >= 2:
     print("KERNEL SHAPE")
     print(shape)
     print(numpy_kernel)
@@ -269,14 +255,17 @@ def remove_errors(obj):
   #                'bit_flip_at_location', 'missing_node', 'missing_connection', 'zero_weight']
 
   if obj.error_type in ["random_bit_flip_percentage", "random_bit_flip_number"]:
+    if obj.verbose >= 1:
+      print(f'removing {len(obj.error_inject_locations)} errors')
+    print(obj.error_inject_locations)
     for weight_index, location_in_weight in obj.error_inject_locations:
       weight = numpy_kernel[weight_index,]
-      if obj.verbose:
+      if obj.verbose >= 2:
         print("WEIGHT: ", weight)
       b = bitstring.BitArray(float=weight, length=32)
       b.invert(location_in_weight)
       adjusted_weight = b.float
-      if obj.verbose:
+      if obj.verbose >= 2:
         print("UNADJUSTED: ", adjusted_weight)
       numpy_kernel[weight_index, ] = adjusted_weight
 
@@ -293,7 +282,7 @@ def remove_errors(obj):
   #                                                   error_pattern=obj.error_pattern)
   obj.error_inject_locations = []
   numpy_kernel = numpy_kernel.reshape(shape)
-  if obj.verbose:
+  if obj.verbose >= 2:
     print("POST REMOVE ERRORS")
     print(numpy_kernel)
   obj.kernel.assign(numpy_kernel)

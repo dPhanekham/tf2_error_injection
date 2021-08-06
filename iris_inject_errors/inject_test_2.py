@@ -131,11 +131,12 @@ model = tf.keras.Sequential([
   tf.keras.layers.Dense(4, activation=tf.nn.relu, input_shape=(4,)),
   # tf.keras.layers.Dense(10, activation=tf.nn.relu),
   dense_error_injection.Dense_Error_Injection(10, activation=tf.nn.relu,
-                                        error_rate=0.1,
+                                        error_rate=0.0000,
                                         error_type='random_bit_flip_percentage',
                                         error_inject_phase='training',
                                         error_node_weight_bit_tuples=error_node_weight_bit_tuples,
-                                        error_persistence=True,
+                                        error_persistence=False,
+                                        error_element='weight',
                                         verbose=1),  # input shape required
   # error_inject_layer.DenseErrorLayer(6, activation=tf.nn.relu),
   tf.keras.layers.Dense(3)
@@ -160,15 +161,15 @@ loss_object = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
 def loss(model, x, y):
   # print("call")
   y_hat = model(x, training=True)
-  print("Y:")
-  print(y)
-  print("Y_HAT:")
-  print(y_hat)
+  # print("Y:")
+  # print(y)
+  # print("Y_HAT:")
+  # print(y_hat)
 
   return loss_object(y_true=y, y_pred=y_hat)
 
 l = loss(model, features, labels)
-print("Loss test: {}".format(l))
+# print("Loss test: {}".format(l))
 
 
 def grad(model, inputs, targets):
@@ -198,7 +199,7 @@ print("\n\n\n\n\n")
 train_loss_results = []
 train_accuracy_results = []
 
-num_epochs = 50
+num_epochs = 300
 #
 print("TRAINING STARTS HERE")
 for epoch in range(num_epochs):
@@ -213,7 +214,7 @@ for epoch in range(num_epochs):
     # print(loss_value)
     # print("GRADS")
     # print(grads)
-    print("APPY GRADIENTS")
+    # print("APPY GRADIENTS")
     # print(model.trainable_variables)
     optimizer.apply_gradients(zip(grads, model.trainable_variables))
 
