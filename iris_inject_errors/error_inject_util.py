@@ -257,7 +257,7 @@ def remove_errors(obj):
   if obj.error_type in ["random_bit_flip_percentage", "random_bit_flip_number"]:
     if obj.verbose >= 1:
       print(f'removing {len(obj.error_inject_locations)} errors')
-    print(obj.error_inject_locations)
+    # print(obj.error_inject_locations)
     for weight_index, location_in_weight in obj.error_inject_locations:
       weight = numpy_kernel[weight_index,]
       if obj.verbose >= 2:

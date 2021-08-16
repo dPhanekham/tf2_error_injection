@@ -32,11 +32,11 @@ model = tf.keras.Sequential([
               tf.keras.layers.Flatten(input_shape=(28, 28)),
               # tf.keras.layers.Dense(128),
               dense_error_injection.Dense_Error_Injection(128, activation=tf.nn.relu,
-                                                          error_rate=0.00001,
+                                                          error_rate=0.00000,
                                                           error_type='random_bit_flip_percentage',
                                                           error_inject_phase='training',
                                                           error_element='weight',
-                                                          verbose=1,
+                                                          verbose=0,
                                                           error_persistence=True
                                                           ),
               tf.keras.layers.Dense(10)
