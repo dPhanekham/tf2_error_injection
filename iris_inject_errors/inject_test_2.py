@@ -129,15 +129,15 @@ error_node_weight_bit_tuples = [(0,0,3)]
 # Define the model
 model = tf.keras.Sequential([
   tf.keras.layers.Dense(4, activation=tf.nn.relu, input_shape=(4,)),
-  # tf.keras.layers.Dense(10, activation=tf.nn.relu),
-  dense_error_injection.Dense_Error_Injection(10, activation=tf.nn.relu,
-                                        error_rate=0.0000,
-                                        error_type='random_bit_flip_percentage',
-                                        error_inject_phase='training',
-                                        error_node_weight_bit_tuples=error_node_weight_bit_tuples,
-                                        error_persistence=False,
-                                        error_element='weight',
-                                        verbose=1),  # input shape required
+  tf.keras.layers.Dense(10, activation=tf.nn.relu),
+  # dense_error_injection.Dense_Error_Injection(3, activation=tf.nn.relu,
+  #                                       error_rate=0.1,
+  #                                       error_type='random_bit_flip_percentage',
+  #                                       error_inject_phase='training',
+  #                                       error_node_weight_bit_tuples=error_node_weight_bit_tuples,
+  #                                       error_persistence=False,
+  #                                       error_element='weight',
+  #                                       verbose=1),  # input shape required
   # error_inject_layer.DenseErrorLayer(6, activation=tf.nn.relu),
   tf.keras.layers.Dense(3)
 ])

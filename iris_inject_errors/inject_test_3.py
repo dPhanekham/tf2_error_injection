@@ -23,29 +23,11 @@ class_names = ['T-shirt/top', 'Trouser', 'Pullover', 'Dress', 'Coat',
 train_images = train_images / 255.0
 test_images = test_images / 255.0
 
-print(train_images.shape)
-print(train_labels.shape)
 train_dataset = tf.data.Dataset.from_tensor_slices((train_images, train_labels)).batch(32)
 
-
-model = tf.keras.Sequential([
-              tf.keras.layers.Flatten(input_shape=(28, 28)),
-              # tf.keras.layers.Dense(128),
-              dense_error_injection.Dense_Error_Injection(128, activation=tf.nn.relu,
-                                                          error_rate=0.00000,
-                                                          error_type='random_bit_flip_percentage',
-                                                          error_inject_phase='training',
-                                                          error_element='weight',
-                                                          verbose=0,
-                                                          error_persistence=True
-                                                          ),
-              tf.keras.layers.Dense(10)
-])
-
 ###########################################################################################################################
-loss_object = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
 
-def loss(model, x, y):
+def loss(model, loss_object, x, y):
   # print("call")
   y_hat = model(x, training=True)
   # print("Y:")
@@ -55,82 +37,151 @@ def loss(model, x, y):
 
   return loss_object(y_true=y, y_pred=y_hat)
 
-l = loss(model, train_images, train_labels)
-# print("Loss test: {}".format(l))
-
-
-def grad(model, inputs, targets):
+def grad(model, loss_object, inputs, targets):
   with tf.GradientTape() as tape:
-    loss_value = loss(model, inputs, targets)
+    loss_value = loss(model, loss_object, inputs, targets)
   return loss_value, tape.gradient(loss_value, model.trainable_variables)
 
+def train_step(model, optimizer, loss_object, x, y):
+  # Optimize the model
+  loss_value, grads = grad(model, loss_object, x, y)
+  optimizer.apply_gradients(zip(grads, model.trainable_variables))
+  
+  return loss_value
+    
+    
+def train(model, optimizer, loss_object, inputs, epochs=50):
+  train_loss_results = []
+  train_accuracy_results = []
 
-optimizer = tf.keras.optimizers.Adam()
-
-loss_value, grads = grad(model, train_images, train_labels)
-
-print("Step: {}, Initial Loss: {}".format(optimizer.iterations.numpy(),
-                                          loss_value.numpy()))
-
-optimizer.apply_gradients(zip(grads, model.trainable_variables))
-
-print("Step: {},         Loss: {}".format(optimizer.iterations.numpy(),
-                                          loss(model, train_images, train_labels).numpy()))
-
-
-print("\n\n\n\n\n")
-
-## Note: Rerunning this cell uses the same model variables
-
-# Keep results for plotting
-train_loss_results = []
-train_accuracy_results = []
-
-num_epochs = 50
-#
-print("TRAINING STARTS HERE")
-for epoch in range(num_epochs):
-  epoch_loss_avg = tf.keras.metrics.Mean()
-  epoch_accuracy = tf.keras.metrics.SparseCategoricalAccuracy()
-
-  # Training loop - using batches of 32
-  for x, y in train_dataset:
-    # Optimize the model
-    loss_value, grads = grad(model, x, y)
-    # print("LOSS VALUE")
-    # print(loss_value)
-    # print("GRADS")
-    # print(grads)
-    # print("APPY GRADIENTS")
-    # print(model.trainable_variables)
-    optimizer.apply_gradients(zip(grads, model.trainable_variables))
-
-    # Track progress
-    epoch_loss_avg(loss_value)  # Add current batch loss
-    # Compare predicted label to actual label
-    epoch_accuracy(y, model(x))
-
-  # End epoch
-  train_loss_results.append(epoch_loss_avg.result())
-  train_accuracy_results.append(epoch_accuracy.result())
-
-  if epoch % 1 == 0:
-    print("RESULTS")
-    print("Epoch {:03d}: Loss: {:.3f}, Accuracy: {:.3%}".format(epoch,
+  for epoch in range(epochs):
+    epoch_loss_avg = tf.keras.metrics.Mean()
+    epoch_accuracy = tf.keras.metrics.SparseCategoricalAccuracy()
+    # Training loop - using batches of 32
+    for x, y in train_dataset:
+      loss = train_step(model, optimizer, loss_object, x, y)
+      epoch_loss_avg(loss)
+      epoch_accuracy(y, model(x))
+    
+    train_loss_results.append(epoch_loss_avg.result())
+    train_accuracy_results.append(epoch_accuracy.result())
+    
+    if epoch > 20 and epoch_accuracy.result() < 0.5:
+      break
+    if epoch % 100 == 0:
+      print("RESULTS")
+      print("Epoch {:03d}: Loss: {:.3f}, Accuracy: {:.3%}".format(epoch,
                                                                 epoch_loss_avg.result(),
                                                                 epoch_accuracy.result()))
+      
+  train_history = (train_loss_results, train_accuracy_results)
+  return train_history
+
+# Error Free Model training ###################################################################################
+# model = tf.keras.Sequential([
+#     tf.keras.layers.Flatten(input_shape=(28, 28)),
+#     tf.keras.layers.Dense(128, activation='relu'),
+#     tf.keras.layers.Dense(10)
+# ])
+
+# model.compile(optimizer='adam',
+#               loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+#               metrics=['accuracy'])
+
+# optimizer = tf.keras.optimizers.Adam()
+# loss_object = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
+
+# train_history = train(model, optimizer, loss_object, train_dataset, epochs=200)
 
 
-fig, axes = plt.subplots(2, sharex=True, figsize=(12, 8))
-fig.suptitle('Training Metrics')
 
-axes[0].set_ylabel("Loss", fontsize=14)
-axes[0].plot(train_loss_results)
+# Error Model training #######################################################################################
 
-axes[1].set_ylabel("Accuracy", fontsize=14)
-axes[1].set_xlabel("Epoch", fontsize=14)
-axes[1].plot(train_accuracy_results)
+
+error_model = tf.keras.Sequential([
+              tf.keras.layers.Flatten(input_shape=(28, 28)),
+              dense_error_injection.Dense_Error_Injection(128, activation=tf.nn.relu,
+                                                          error_rate=0.001, 
+                                                          error_type='random_bit_flip_percentage',
+                                                          error_inject_phase='training',
+                                                          error_element='weight',
+                                                          verbose=2,
+                                                          error_persistence=False
+                                                          ),
+              tf.keras.layers.Dense(10)
+])
+
+error_model.compile(optimizer='adam',
+                    loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+                    metrics=['accuracy'])
+
+loss_object = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
+optimizer = tf.keras.optimizers.Adam()
+error_train_history = train(error_model, optimizer, loss_object, train_dataset, epochs=200)
+
+test_loss, test_acc = error_model.evaluate(test_images,  test_labels, verbose=2)
+
+print('\nTest accuracy:', test_acc)
+
+# plt.plot(train_history.history['accuracy'])
+# plt.plot(train_history[1])
+plt.plot(error_train_history[1])
+# plt.plot(error_train_history_2[1])
+plt.title('model accuracy')
+plt.ylabel('accuracy')
+plt.xlabel('epoch')
+plt.legend(['no_error', '0.01 error rate'], loc='upper left')
 plt.show()
+
+# # Keep results for plotting
+# train_loss_results = []
+# train_accuracy_results = []
+
+# num_epochs = 50
+# #
+# print("TRAINING STARTS HERE")
+# for epoch in range(num_epochs):
+#   epoch_loss_avg = tf.keras.metrics.Mean()
+#   epoch_accuracy = tf.keras.metrics.SparseCategoricalAccuracy()
+
+#   # Training loop - using batches of 32
+#   for x, y in train_dataset:
+#     # Optimize the model
+#     loss_value, grads = grad(model, x, y)
+#     # print("LOSS VALUE")
+#     # print(loss_value)
+#     # print("GRADS")
+#     # print(grads)
+#     # print("APPY GRADIENTS")
+#     # print(model.trainable_variables)
+#     optimizer.apply_gradients(zip(grads, model.trainable_variables))
+
+#     # Track progress
+#     epoch_loss_avg(loss_value)  # Add current batch loss
+#     # Compare predicted label to actual label
+#     epoch_accuracy(y, model(x))
+
+#   # End epoch
+#   train_loss_results.append(epoch_loss_avg.result())
+#   train_accuracy_results.append(epoch_accuracy.result())
+
+#   if epoch % 1 == 0:
+#     print("RESULTS")
+#     print("Epoch {:03d}: Loss: {:.3f}, Accuracy: {:.3%}".format(epoch,
+#                                                                 epoch_loss_avg.result(),
+#                                                                 epoch_accuracy.result()))
+
+
+# fig, axes = plt.subplots(2, sharex=True, figsize=(12, 8))
+# fig.suptitle('Training Metrics')
+
+# axes[0].set_ylabel("Loss", fontsize=14)
+# axes[0].plot(train_loss_results)
+
+# axes[1].set_ylabel("Accuracy", fontsize=14)
+# axes[1].set_xlabel("Epoch", fontsize=14)
+# axes[1].plot(train_accuracy_results)
+# plt.show()
 ###################################################################################################################################
 
 # model.compile(optimizer='adam',
@@ -153,4 +204,4 @@ plt.show()
 # plt.ylabel('accuracy')
 # plt.xlabel('epoch')
 # plt.legend(['no_error', '0.1 error rate'], loc='upper left')
-plt.show()
+# plt.show()
