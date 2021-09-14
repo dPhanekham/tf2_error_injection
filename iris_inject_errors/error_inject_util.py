@@ -39,11 +39,9 @@ def inject_errors(obj):
   numpy_kernel = K.get_value(obj.kernel)
   shape = numpy_kernel.shape
 #   print(f'shape {shape}')
-  if obj.
-
-  verbose >= 2:
-    print("PRE INJECT")
-    print(numpy_kernel)
+  # if obj.verbose >= 2:
+    # print("PRE INJECT")
+    # print(numpy_kernel)
   numpy_kernel = numpy_kernel.flatten()
   # if obj.verbose >= 2:
     # print("KERNEL SHAPE")
@@ -79,9 +77,9 @@ def inject_errors(obj):
                                                     error_pattern=obj.error_pattern)
 
   numpy_kernel = numpy_kernel.reshape(shape)
-  if obj.verbose >= 2:
-    print("POST INJECT")
-    print(numpy_kernel)
+  # if obj.verbose >= 2:
+  #   print("POST INJECT")
+  #   print(numpy_kernel)
   obj.kernel.assign(numpy_kernel)
 
 def inject_random_bit_flips(obj, array, error_rate, error_amount, error_element):
@@ -101,6 +99,8 @@ def inject_random_bit_flips(obj, array, error_rate, error_amount, error_element)
   # b = bitstring.BitArray(float=f, length=32)
 
   # inject errors
+  error_before_array = []
+  error_after_array = []
   error_count = 0
   if error_rate > 0.0 and error_amount == 0:
     if random.random() < error_rate:
@@ -109,19 +109,27 @@ def inject_random_bit_flips(obj, array, error_rate, error_amount, error_element)
     weight_index = randint(0, array.shape[0]-1)
     # print(weight_index)
     weight = array[weight_index,]
+    error_before_array.append(weight)
     if obj.verbose >= 3:
       print("WEIGHT: ", weight)
     b = bitstring.BitArray(float=weight, length=32)
-    location_in_weight = randint(2, 31)
+    # randint is inclusive of lower and upper bounds
+    location_in_weight = randint(3, 31)
     b.invert(location_in_weight)
     error_locations.append((weight_index,location_in_weight))
     adjusted_weight = b.float
+    error_after_array.append(adjusted_weight)
     if obj.verbose >= 3:
       print("ADJUSTED: ", adjusted_weight)
     array[weight_index, ] = adjusted_weight
     error_count += 1
   if obj.verbose >= 3:
     print(f'Injected {len(error_locations)} errors')
+  if obj.verbose >= 2:
+    print('BEFORE INJECT')
+    print(error_before_array)
+    print('AFTER INJECT')
+    print(error_after_array)
   obj.error_inject_locations = error_locations
   return array
 
@@ -286,7 +294,7 @@ def remove_errors(obj):
   #                                                   error_pattern=obj.error_pattern)
   obj.error_inject_locations = []
   numpy_kernel = numpy_kernel.reshape(shape)
-  if obj.verbose >= 2:
-    print("POST REMOVE ERRORS")
-    print(numpy_kernel)
+  # if obj.verbose >= 2:
+  #   print("POST REMOVE ERRORS")
+  #   print(numpy_kernel)
   obj.kernel.assign(numpy_kernel)
