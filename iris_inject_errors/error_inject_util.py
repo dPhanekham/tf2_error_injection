@@ -114,7 +114,7 @@ def inject_random_bit_flips(obj, array, error_rate, error_amount, error_element)
       print("WEIGHT: ", weight)
     b = bitstring.BitArray(float=weight, length=32)
     # randint is inclusive of lower and upper bounds
-    location_in_weight = randint(3, 31)
+    location_in_weight = randint(4, 31)
     b.invert(location_in_weight)
     error_locations.append((weight_index,location_in_weight))
     adjusted_weight = b.float
