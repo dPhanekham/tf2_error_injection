@@ -160,3 +160,17 @@ for sample_size in sample_sizes:
 
 
 np.save('batch_results/sample_size_train_history_error_rate_0', sample_size_0_error_train_history, allow_pickle=True, fix_imports=True)
+
+sample_size = 60000
+plt.figure(figsize=(10, 8))
+plt.plot(sample_size_0_error_train_history[sample_size]['validation_accuracy'][0])
+plt.plot(sample_size_0_error_train_history[sample_size]['validation_accuracy'][1])
+plt.plot(sample_size_0_error_train_history[sample_size]['validation_accuracy'][2])
+plt.plot(sample_size_0_error_train_history[sample_size]['validation_accuracy'][3])
+plt.plot(sample_size_0_error_train_history[sample_size]['validation_accuracy'][4])
+plt.plot(sample_size_0_error_train_history[sample_size]['validation_accuracy'][5])
+plt.title('Validation accuracy per training run')
+plt.ylabel('Accuracy')
+plt.xlabel('Epoch')
+plt.show()
+plt.savefig('batch_results/figures/sample_size_model_training_accuracy_1_small_error_rate_00001.png', bbox_inches='tight')
