@@ -8,6 +8,7 @@ import os
 import error_inject_layer
 import dense_error_injection
 import error_inject_optimizer
+from tensorflow.keras.utils import to_categorical
 from tensorflow.python.util import deprecation
 print(tf.__version__)
 
@@ -20,6 +21,8 @@ class_names = ['T-shirt/top', 'Trouser', 'Pullover', 'Dress', 'Coat',
 train_images = train_images / 255.0
 test_images = test_images / 255.0
 
+# train_labels = to_categorical(train_labels, 10)
+# test_labels = to_categorical(test_labels, 10)
 
 
 def loss(model, loss_object, x, y):
@@ -96,21 +99,21 @@ error_rate = 0
 num_epochs = 500
 
 sample_sizes = [
-                # 1000, 
+                1000, 
                 # 2000, 
                 # 3000,
                 # 4000,
-                # 5000,
+                5000,
                 # 6000,
                 # 7000,
                 # 8000,
                 # 9000, 
-                # 10000,
+                10000,
                 # 20000,
-                # 30000, 
+                30000, 
                 # 40000, 
                 # 50000,
-                60000
+                # 60000
                ]
 
 for sample_size in sample_sizes:
@@ -158,19 +161,20 @@ for sample_size in sample_sizes:
     sample_size_0_error_train_history[sample_size]['validation_loss'].append(sample_size_history_tmp[2])
     sample_size_0_error_train_history[sample_size]['validation_accuracy'].append(sample_size_history_tmp[3])
 
+  plt.figure(figsize=(10, 8))
+  plt.plot(sample_size_0_error_train_history[sample_size]['validation_accuracy'][0])
+  plt.plot(sample_size_0_error_train_history[sample_size]['validation_accuracy'][1])
+  plt.plot(sample_size_0_error_train_history[sample_size]['validation_accuracy'][2])
+  plt.plot(sample_size_0_error_train_history[sample_size]['validation_accuracy'][3])
+  plt.plot(sample_size_0_error_train_history[sample_size]['validation_accuracy'][4])
+  plt.plot(sample_size_0_error_train_history[sample_size]['validation_accuracy'][5])
+  plt.title('Validation accuracy per training run')
+  plt.ylabel('Accuracy')
+  plt.xlabel('Epoch')
+  # plt.show()
+  plt.savefig(f'batch_results/figures/sample_size_{sample_size}_model_training_accuracy_1_small_error_rate_0.png', bbox_inches='tight')
+
 
 np.save('batch_results/sample_size_train_history_error_rate_0', sample_size_0_error_train_history, allow_pickle=True, fix_imports=True)
 
-sample_size = 60000
-plt.figure(figsize=(10, 8))
-plt.plot(sample_size_0_error_train_history[sample_size]['validation_accuracy'][0])
-plt.plot(sample_size_0_error_train_history[sample_size]['validation_accuracy'][1])
-plt.plot(sample_size_0_error_train_history[sample_size]['validation_accuracy'][2])
-plt.plot(sample_size_0_error_train_history[sample_size]['validation_accuracy'][3])
-plt.plot(sample_size_0_error_train_history[sample_size]['validation_accuracy'][4])
-plt.plot(sample_size_0_error_train_history[sample_size]['validation_accuracy'][5])
-plt.title('Validation accuracy per training run')
-plt.ylabel('Accuracy')
-plt.xlabel('Epoch')
-plt.show()
-plt.savefig('batch_results/figures/sample_size_model_training_accuracy_1_small_error_rate_00001.png', bbox_inches='tight')
+# sample_size = 60000
