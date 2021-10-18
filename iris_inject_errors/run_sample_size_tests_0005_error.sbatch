@@ -1,8 +1,8 @@
 #!/bin/bash
-#SBATCH -J sample_size_tests_0_error
-#SBATCH -o batch_output/sample_size_tests_0_error_%j.out
+#SBATCH -J sample_size_tests_0005_error
+#SBATCH -o batch_output/sample_size_tests_0005_error_%j.out
 #SBATCH -D /work/users/dphanekham/tf2_error_injection/iris_inject_errors
-#SBATCH -p fp-gpgpu-3
+#SBATCH -p gpgpu-1
 
 export MODULEPATH=/users/dphanekham/modules:/hpc/modules/applications:/hpc/modules/compilers
 
@@ -10,4 +10,4 @@ export MODULEPATH=/users/dphanekham/modules:/hpc/modules/applications:/hpc/modul
 module purge
 module load modfile
 
-time python sample_size_tests_0_error.py
+time python sample_size_tests_0005_error.py
