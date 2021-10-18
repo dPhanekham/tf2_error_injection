@@ -136,8 +136,8 @@ for sample_size in sample_sizes:
     print(f'sample size: {sample_size}')
     test_model = tf.keras.Sequential([
                  tf.keras.layers.Flatten(input_shape=(28, 28)),
-                 tf.keras.layers.Dense(512),
-                 tf.keras.layers.Dense(512),
+                 tf.keras.layers.Dense(512, activation='relu'),
+                 tf.keras.layers.Dense(512, activation='relu'),
                  tf.keras.layers.Dense(10)
     ])
     
