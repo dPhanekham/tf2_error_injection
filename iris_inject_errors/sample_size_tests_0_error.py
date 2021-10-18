@@ -113,7 +113,7 @@ sample_sizes = [
                 30000, 
                 # 40000, 
                 # 50000,
-                # 60000
+                60000
                ]
 
 for sample_size in sample_sizes:
