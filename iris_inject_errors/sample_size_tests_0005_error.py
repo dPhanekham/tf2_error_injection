@@ -88,14 +88,14 @@ def train(model, optimizer, loss_object, inputs, epochs=50, validation_set=None)
 
 ### TRAIN WITH NO ERROR
 
-sample_size_0_error_train_history = {}
+sample_size_0005_error_train_history = {}
 try:
-  sample_size_0_error_train_history = np.load('batch_results/sample_size_train_history_error_rate_0.npy', allow_pickle=True, fix_imports=True)
+  sample_size_0005_error_train_history = np.load('batch_results/sample_size_train_history_error_rate_0005.npy', allow_pickle=True, fix_imports=True)
 except:
-  sample_size_0_error_train_history = {}
+  sample_size_0005_error_train_history = {}
 
 train_size = 60000
-error_rate = 0
+error_rate = 0.0005
 num_epochs = 500
 iterations = 20
 
@@ -119,12 +119,12 @@ sample_sizes = [
 
 for sample_size in sample_sizes:
 
-  if sample_size not in sample_size_0_error_train_history:
-    sample_size_0_error_train_history[sample_size] = {}
-    sample_size_0_error_train_history[sample_size]['training_accuracy'] = []
-    sample_size_0_error_train_history[sample_size]['training_loss'] = []
-    sample_size_0_error_train_history[sample_size]['validation_accuracy'] = []
-    sample_size_0_error_train_history[sample_size]['validation_loss'] = []
+  if sample_size not in sample_size_0005_error_train_history:
+    sample_size_0005_error_train_history[sample_size] = {}
+    sample_size_0005_error_train_history[sample_size]['training_accuracy'] = []
+    sample_size_0005_error_train_history[sample_size]['training_loss'] = []
+    sample_size_0005_error_train_history[sample_size]['validation_accuracy'] = []
+    sample_size_0005_error_train_history[sample_size]['validation_loss'] = []
 
   for i in range(0,iterations):
     train_dataset = None
@@ -138,7 +138,14 @@ for sample_size in sample_sizes:
     test_model = tf.keras.Sequential([
                  tf.keras.layers.Flatten(input_shape=(28, 28)),
                  tf.keras.layers.Dense(512, activation='relu'),
-                 tf.keras.layers.Dense(512, activation='relu'),
+                 dense_error_injection.Dense_Error_Injection(512, activation=tf.nn.relu,
+                                                             error_rate=error_rate, 
+                                                             error_type='random_bit_flip_percentage',
+                                                             error_inject_phase='training',
+                                                             error_element='weight',
+                                                             verbose=0,
+                                                             error_persistence=True
+                                                             ),
                  tf.keras.layers.Dense(10)
     ])
     
@@ -157,25 +164,25 @@ for sample_size in sample_sizes:
 #                                        validation_data=(test_images,  test_labels),
 #                                        batch_size=32, verbose=0)
     # (train_loss_results, train_accuracy_results, validation_loss_results, validation_accuracy_results)
-    sample_size_0_error_train_history[sample_size]['training_loss'].append(sample_size_history_tmp[0])
-    sample_size_0_error_train_history[sample_size]['training_accuracy'].append(sample_size_history_tmp[1])
-    sample_size_0_error_train_history[sample_size]['validation_loss'].append(sample_size_history_tmp[2])
-    sample_size_0_error_train_history[sample_size]['validation_accuracy'].append(sample_size_history_tmp[3])
+    sample_size_0005_error_train_history[sample_size]['training_loss'].append(sample_size_history_tmp[0])
+    sample_size_0005_error_train_history[sample_size]['training_accuracy'].append(sample_size_history_tmp[1])
+    sample_size_0005_error_train_history[sample_size]['validation_loss'].append(sample_size_history_tmp[2])
+    sample_size_0005_error_train_history[sample_size]['validation_accuracy'].append(sample_size_history_tmp[3])
 
   plt.figure(figsize=(10, 8))
-  plt.plot(sample_size_0_error_train_history[sample_size]['validation_accuracy'][0])
-  plt.plot(sample_size_0_error_train_history[sample_size]['validation_accuracy'][1])
-  plt.plot(sample_size_0_error_train_history[sample_size]['validation_accuracy'][2])
-  plt.plot(sample_size_0_error_train_history[sample_size]['validation_accuracy'][3])
-  plt.plot(sample_size_0_error_train_history[sample_size]['validation_accuracy'][4])
-  plt.plot(sample_size_0_error_train_history[sample_size]['validation_accuracy'][5])
+  plt.plot(sample_size_0005_error_train_history[sample_size]['validation_accuracy'][0])
+  plt.plot(sample_size_0005_error_train_history[sample_size]['validation_accuracy'][1])
+  plt.plot(sample_size_0005_error_train_history[sample_size]['validation_accuracy'][2])
+  plt.plot(sample_size_0005_error_train_history[sample_size]['validation_accuracy'][3])
+  plt.plot(sample_size_0005_error_train_history[sample_size]['validation_accuracy'][4])
+  plt.plot(sample_size_0005_error_train_history[sample_size]['validation_accuracy'][5])
   plt.title('Validation accuracy per training run')
   plt.ylabel('Accuracy')
   plt.xlabel('Epoch')
   # plt.show()
-  plt.savefig(f'batch_results/figures/sample_size_{sample_size}_model_training_accuracy_1_small_error_rate_0.png', bbox_inches='tight')
+  plt.savefig(f'batch_results/figures/sample_size_{sample_size}_model_training_accuracy_1_small_error_rate_0005.png', bbox_inches='tight')
 
 
-np.save('batch_results/sample_size_train_history_error_rate_0', sample_size_0_error_train_history, allow_pickle=True, fix_imports=True)
+np.save('batch_results/sample_size_train_history_error_rate_0005', sample_size_0005_error_train_history, allow_pickle=True, fix_imports=True)
 
 # sample_size = 60000
