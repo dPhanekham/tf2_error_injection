@@ -3,7 +3,7 @@ import tensorflow as tf
 
 # Helper libraries
 import numpy as np
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 import os
 import error_inject_layer
 import dense_error_injection
@@ -169,18 +169,18 @@ for sample_size in sample_sizes:
     sample_size_00001_error_train_history[sample_size]['validation_loss'].append(sample_size_history_tmp[2])
     sample_size_00001_error_train_history[sample_size]['validation_accuracy'].append(sample_size_history_tmp[3])
 
-  plt.figure(figsize=(10, 8))
-  plt.plot(sample_size_00001_error_train_history[sample_size]['validation_accuracy'][0])
-  plt.plot(sample_size_00001_error_train_history[sample_size]['validation_accuracy'][1])
-  plt.plot(sample_size_00001_error_train_history[sample_size]['validation_accuracy'][2])
-  plt.plot(sample_size_00001_error_train_history[sample_size]['validation_accuracy'][3])
-  plt.plot(sample_size_00001_error_train_history[sample_size]['validation_accuracy'][4])
-  plt.plot(sample_size_00001_error_train_history[sample_size]['validation_accuracy'][5])
-  plt.title('Validation accuracy per training run')
-  plt.ylabel('Accuracy')
-  plt.xlabel('Epoch')
-  # plt.show()
-  plt.savefig(f'batch_results/figures/sample_size_{sample_size}_model_training_accuracy_1_small_error_rate_00001.png', bbox_inches='tight')
+#  plt.figure(figsize=(10, 8))
+#  plt.plot(sample_size_00001_error_train_history[sample_size]['validation_accuracy'][0])
+#  plt.plot(sample_size_00001_error_train_history[sample_size]['validation_accuracy'][1])
+#  plt.plot(sample_size_00001_error_train_history[sample_size]['validation_accuracy'][2])
+#  plt.plot(sample_size_00001_error_train_history[sample_size]['validation_accuracy'][3])
+#  plt.plot(sample_size_00001_error_train_history[sample_size]['validation_accuracy'][4])
+#  plt.plot(sample_size_00001_error_train_history[sample_size]['validation_accuracy'][5])
+#  plt.title('Validation accuracy per training run')
+#  plt.ylabel('Accuracy')
+#  plt.xlabel('Epoch')
+#  # plt.show()
+#  plt.savefig(f'batch_results/figures/sample_size_{sample_size}_model_training_accuracy_1_small_error_rate_00001.png', bbox_inches='tight')
 
 
 np.save('batch_results/sample_size_train_history_error_rate_00001', sample_size_00001_error_train_history, allow_pickle=True, fix_imports=True)
