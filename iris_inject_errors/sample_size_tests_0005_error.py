@@ -91,13 +91,14 @@ def train(model, optimizer, loss_object, inputs, epochs=50, validation_set=None)
 sample_size_0005_error_train_history = {}
 try:
   sample_size_0005_error_train_history = np.load('batch_results/sample_size_train_history_error_rate_0005.npy', allow_pickle=True, fix_imports=True)
+  sample_size_0005_error_train_history = sample_size_0005_error_train_history.reshape(1)[0]
 except:
   sample_size_0005_error_train_history = {}
 
 train_size = 60000
 error_rate = 0.0005
 num_epochs = 500
-iterations = 20
+iterations = 2
 
 sample_sizes = [
                 1000, 
