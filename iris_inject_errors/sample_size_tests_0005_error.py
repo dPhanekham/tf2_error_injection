@@ -98,7 +98,7 @@ except:
 train_size = 60000
 error_rate = 0.0005
 num_epochs = 500
-iterations = 2
+iterations = 18
 
 sample_sizes = [
                 1000, 
