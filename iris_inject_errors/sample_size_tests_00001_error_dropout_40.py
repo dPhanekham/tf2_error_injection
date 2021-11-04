@@ -147,7 +147,7 @@ for sample_size in sample_sizes:
                                                              verbose=0,
                                                              error_persistence=True
                                                              ),
-                 tf.keras.layers.Dropout(0.4)
+                 tf.keras.layers.Dropout(0.4),
                  tf.keras.layers.Dense(10)
     ])
     
