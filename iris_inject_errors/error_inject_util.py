@@ -48,6 +48,22 @@ def inject_errors(obj):
     # print(shape)
     # print(numpy_kernel)
 
+  # TODO this is probably more statistically sound than what we have below,
+  # but the for loop will be somewhat pricey. It might be better to figure out a normal curve
+  # if obj.error_type == "random_bit_flip_percentage":
+  #   weight_num = numpy_kernel.shape[0]
+  #   n = weight_num
+  #   if obj.error_element == 'bit':
+  #     n = weight_num * 32
+  #   if obj.error_element == 'byte':
+  #     n = weight_num * 4
+
+  #   error_amount = 0
+  #   for i in range(0,n):
+  #     if random.random() < obj.error_rate:
+  #       error_amount += 1
+
+
   if obj.error_type == "random_bit_flip_percentage":
     error_amount = int(numpy_kernel.shape[0] * obj.error_rate)
     # TODO check datatype first
@@ -56,8 +72,12 @@ def inject_errors(obj):
     if obj.error_element == 'byte':
       error_amount = error_amount * 4
     if error_amount == 0:
-      if random.random() < obj.error_rate:
-        error_amount = 1
+      weight_num = numpy_kernel.shape[0]
+      n = weight_num
+      error_amount = 0
+      for i in range(0,n):
+        if random.random() < obj.error_rate:
+          error_amount += 1
     if obj.verbose >= 1:
       print(f'inserting {error_amount} errors')
     numpy_kernel = inject_random_bit_flips(obj, numpy_kernel, obj.error_rate, error_amount, obj.error_element)
